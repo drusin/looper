@@ -17,23 +17,42 @@
 	let mediaRecorder;
 	const recordedChunks = [];
 	const options = {mimeType: 'audio/webm'};
-	const BPM = 120;
-	const BEAT_AMOUNT = 8;
-	const MILLISECONDS_PER_LOOP = 60 / BPM * BEAT_AMOUNT * 1000;
-	const MILLISECONDS_PER_BEAT = MILLISECONDS_PER_LOOP / BEAT_AMOUNT;
 	let timer = 0;
-	let started = false;
+	const worker = new Worker('./worker.js');
 
 	const counter = document.getElementById('counter');
 
 	const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+	const volume = audioContext.createGain();
+	volume.gain.value = 0.1;
+	volume.connect(audioContext.destination);
 
 	startButton.addEventListener('click', function() {
-		started = true;
+		// started = true;
 		audioContext.resume();
+		worker.postMessage('start');
+		mediaRecorder.start();
 	});
 
-	let lastUpdate;
+	worker.onmessage = (message) => {
+		counter.innerHTML = message.data.currentBeat;
+		const osc = audioContext.createOscillator();
+		osc.connect(volume);
+
+		if (message.data.high) {
+			osc.frequency.value = 440.0
+		}
+		else {
+			osc.frequency.value = 220.0;
+		}
+
+		osc.start();
+		osc.stop(audioContext.currentTime + 0.1);
+		if (message.data.currentBeat === 1) {
+			mediaRecorder.stop();
+			syncLoops();
+		}
+	};
 
 	function loop() {
 		const blob = new Blob(recordedChunks);
@@ -52,35 +71,6 @@
 		Array.from(loopsContainer.children).forEach(child => child.currentTime = timer);
 	}
 
-	function getCurrentBeat() {
-		return Math.trunc(timer / MILLISECONDS_PER_BEAT) + 1;
-	}
-
-	setInterval(function() {
-		if (!started) {
-			return;
-		}
-		if (!lastUpdate) {
-			lastUpdate = Date.now();
-			mediaRecorder.start();
-			doPrimary()
-		}
-		const now = Date.now();
-		const oldBeat = getCurrentBeat();
-		timer += now - lastUpdate;
-		if (getCurrentBeat() > oldBeat) {
-			doSecondary();
-		}
-		lastUpdate = now;
-		if (timer >= MILLISECONDS_PER_LOOP) {
-			timer -= MILLISECONDS_PER_LOOP;
-			mediaRecorder.stop();
-			syncLoops();
-			doPrimary();
-		}
-		counter.innerHTML = getCurrentBeat();
-	}, 50);
-
 	const handleSuccess = function(stream) {
 		player.srcObject = stream;
 		mediaRecorder = new MediaRecorder(stream, options);
@@ -98,36 +88,6 @@
 
 	navigator.mediaDevices.getUserMedia({ audio: true, video: false })
 		.then(handleSuccess);
-
-
-
-	const primaryTone = audioContext.createOscillator(); // instantiate an oscillator
-	primaryTone.type = 'sine'; // this is the default - also square, sawtooth, triangle
-	primaryTone.frequency.value = 440; // Hz
-	const gain = audioContext.createGain();
-	console.log(gain.gain.value);
-	gain.gain.value = 0.1;
-	console.log(gain.gain.value);
-	primaryTone.connect(gain);
-	primaryTone.start();
-
-
-	function doPrimary() {
-		primaryTone.connect(audioContext.destination); // connect it to the destination
-		setTimeout(() => primaryTone.disconnect(), 10);
-	}
-
-
-	const secondaryTone = audioContext.createOscillator(); // instantiate an oscillator
-	secondaryTone.type = 'sine'; // this is the default - also square, sawtooth, triangle
-	secondaryTone.frequency.value = 320; // Hz
-	secondaryTone.connect(gain);
-	secondaryTone.start();
-
-	function doSecondary() {
-		secondaryTone.connect(audioContext.destination); // connect it to the destination
-		setTimeout(() => secondaryTone.disconnect(), 10);
-	}
 </script>
 </body>
 </html>
