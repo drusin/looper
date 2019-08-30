@@ -87,3 +87,5 @@ fabric.properties
 
 *.iml
 .idea/
+
+*.pem
