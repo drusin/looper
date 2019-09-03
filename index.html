@@ -5,7 +5,10 @@
 	<title>Title</title>
 </head>
 <body>
-<audio id="current-output" autoplay></audio>
+<div>
+	<select id="devices"></select>
+</div>
+<audio id="current-output" autoplay controls></audio>
 <button id="start">Start</button>
 <div id="counter"></div>
 <div id="loops"></div>
@@ -13,6 +16,8 @@
 	const player = document.getElementById('current-output');
 	const startButton = document.getElementById('start');
 	const loopsContainer = document.getElementById('loops');
+	const devicesSelect = document.getElementById('devices');
+	devicesSelect.addEventListener('change', onDeviceSelection);
 
 	let mediaRecorder;
 	const recordedChunks = [];
@@ -62,17 +67,20 @@
 		newAudio.setAttribute('autoplay', '');
 		newAudio.setAttribute('loop', '');
 		newAudio.setAttribute('controls', '');
-		newAudio.currentTime = timer;
+		newAudio.currentTime = 0.1;
 		recordedChunks.length = 0;
 		mediaRecorder.start();
 	}
 
 	function syncLoops() {
-		Array.from(loopsContainer.children).forEach(child => child.currentTime = timer);
+		Array.from(loopsContainer.children).forEach(child => child.currentTime = 0.1);
 	}
 
 	const handleSuccess = function(stream) {
 		player.srcObject = stream;
+		if (mediaRecorder) {
+			mediaRecorder.stop();
+		}
 		mediaRecorder = new MediaRecorder(stream, options);
 
 		mediaRecorder.addEventListener('dataavailable', function(e) {
@@ -82,12 +90,36 @@
 			}
 			loop();
 		});
-
-		// mediaRecorder.start();
 	};
 
-	navigator.mediaDevices.getUserMedia({ audio: true, video: false })
-		.then(handleSuccess);
+	async function setup() {
+		const devices = await navigator.mediaDevices.enumerateDevices();
+		devices
+			.filter(d => d.kind ==="audioinput")
+			.map(d => ({
+				deviceId: d.deviceId,
+				label: d.label ? d.label : d.deviceId
+			}))
+			.forEach(d => {
+				const option = document.createElement('option');
+				option.innerHTML = d.label;
+				option.value = d.deviceId;
+				devicesSelect.appendChild(option);
+			});
+	}
+	setup();
+
+	function onDeviceSelection(e) {
+		console.log(e);
+		navigator.mediaDevices.getUserMedia({
+			audio: {
+				deviceId: e.target.value,
+				latency: 0.05,
+				echoCancellation: false,
+				noiseSuppression: false
+			}
+		}).then(handleSuccess);
+	}
 </script>
 </body>
 </html>
