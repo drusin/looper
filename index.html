@@ -2,23 +2,31 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<title>Title</title>
+	<title>L00P3R</title>
 </head>
 <body>
 <div>
 	<label for=devices>Select audio input: </label>
 	<select id="devices"></select>
 </div>
+
+<latency-tester-element id="latency-tester-element"></latency-tester-element>
+
 <audio id="current-output" autoplay controls muted></audio>
 <button id="start">Start</button>
 <div id="counter"></div>
 <div id="loops"></div>
-<script>
+
+<script type="module" src="./latency-tester-element.js"></script>
+
+<script type="module">
 	const player = document.getElementById('current-output');
 	const startButton = document.getElementById('start');
 	const loopsContainer = document.getElementById('loops');
 	const devicesSelect = document.getElementById('devices');
 	devicesSelect.addEventListener('change', onDeviceSelection);
+
+	let stream_;
 
 	let mediaRecorder;
 	const recordedChunks = [];
@@ -37,6 +45,8 @@
 		worker.postMessage('start');
 		mediaRecorder.start();
 	});
+
+	const latTest = document.getElementById('latency-tester-element');
 
 	worker.onmessage = (message) => {
 		counter.innerHTML = message.data.currentBeat;
@@ -66,16 +76,17 @@
 		newAudio.setAttribute('autoplay', '');
 		newAudio.setAttribute('loop', '');
 		newAudio.setAttribute('controls', '');
-		newAudio.currentTime = 0.1;
+		newAudio.currentTime = latTest.latency / 1000;
 		recordedChunks.length = 0;
 		mediaRecorder.start();
 	}
 
 	function syncLoops() {
-		Array.from(loopsContainer.children).forEach(child => child.currentTime = 0.1);
+		Array.from(loopsContainer.children).forEach(child => child.currentTime = latTest.latency / 1000);
 	}
 
 	const handleSuccess = function(stream) {
+		stream_ = stream;
 		player.srcObject = stream;
 		if (mediaRecorder) {
 			mediaRecorder.stop();
@@ -89,6 +100,8 @@
 			}
 			loop();
 		});
+
+		setupLatencyTest(stream);
 	};
 
 	async function setup() {
@@ -117,11 +130,17 @@
 		navigator.mediaDevices.getUserMedia({
 			audio: {
 				deviceId: devicesSelect.value,
-				latency: 0.03,
 				echoCancellation: false,
 				noiseSuppression: false
 			}
 		}).then(handleSuccess);
+	}
+
+	import osc from './osc.js';
+	function setupLatencyTest(stream) {
+		osc.init(audioContext);
+		latTest.osc = osc;
+		latTest.mediaRecorder = new MediaRecorder(stream, options);
 	}
 </script>
 </body>

@@ -1,33 +1,61 @@
-const BPM = 120;
-const BEATS_PER_MEASURE = 4;
-const LOOP_LENGTH = 2;
-const BEATS_PER_LOOP = BEATS_PER_MEASURE * LOOP_LENGTH;
-const MILLISECONDS_PER_LOOP = 60 / BPM * BEATS_PER_LOOP * 1000;
-const MILLISECONDS_PER_BEAT = MILLISECONDS_PER_LOOP / BEATS_PER_LOOP;
+let settings = {
+	bpm: 120,
+	beatsPerMeasure: 4,
+	loopLength: 2,
+	highBeats: [1],
+	repeat: true
+}
+
+const beatsPerLoop = () => settings.beatsPerMeasure * settings.loopLength;
+const milisPerLoop = () => 60 / settings.bpm * beatsPerLoop() * 1000;
+const milisPerBeat = () => milisPerLoop() / beatsPerLoop();
 
 let currentBeat = 1;
+let currentLoop = 1;
+
+let currentTimer;
 
 self.onmessage = (message) => {
 	console.log(message);
-	switch (message.data) {
-		case "start": {
+	switch (message.data.name || message.data) {
+		case "settings":
+			Object.assign(settings, message.data.settings);
+			break;
+		case "start":
 			start();
 			break;
-		}
-	}
+		case "stop":
+			if (currentTimer) {
+				clearInterval(currentTimer);
+				break;
+			}
+	};
 };
 
 function start() {
-	setInterval(tick, MILLISECONDS_PER_BEAT)
+	currentTimer = setInterval(tick, milisPerBeat())
 }
 
 function tick() {
 	postMessage({
-		currentBeat,
-		high: !((currentBeat - 1) % BEATS_PER_MEASURE)
+		currentBeat: currentBeat + (currentLoop -1) * settings.beatsPerMeasure,
+		high: settings.highBeats.includes(currentBeat)
 	});
-	currentBeat++;
-	if (currentBeat > BEATS_PER_LOOP) {
+
+	if (currentBeat === settings.beatsPerMeasure) {
+		if (currentLoop === settings.loopLength) {
+			if (settings.repeat) {
+				currentBeat = 1;
+				currentLoop = 1;
+				return;
+			}
+			else {
+				clearInterval(currentTimer);
+			}
+		}
 		currentBeat = 1;
+		currentLoop++;
+		return;
 	}
+	currentBeat++;
 }
