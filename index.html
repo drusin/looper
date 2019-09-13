@@ -17,7 +17,10 @@
 <div id="counter"></div>
 <div id="loops"></div>
 
+<loop-element id="loop-element"></loop-element>
+
 <script type="module" src="./latency-tester-element.js"></script>
+<script type="module" src="./loop-element.js"></script>
 
 <script type="module">
 	const player = document.getElementById('current-output');
@@ -141,6 +144,12 @@
 		osc.init(audioContext);
 		latTest.osc = osc;
 		latTest.mediaRecorder = new MediaRecorder(stream, options);
+
+		document.getElementById('loop-element').init({
+			mediaRecorder: new MediaRecorder(stream, options),
+			latency: latTest.latency,
+			beatWorker: worker
+		});
 	}
 </script>
 </body>

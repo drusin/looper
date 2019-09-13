@@ -4,11 +4,11 @@ let settings = {
 	loopLength: 2,
 	highBeats: [1],
 	repeat: true
-}
+};
 
 const beatsPerLoop = () => settings.beatsPerMeasure * settings.loopLength;
-const milisPerLoop = () => 60 / settings.bpm * beatsPerLoop() * 1000;
-const milisPerBeat = () => milisPerLoop() / beatsPerLoop();
+const millisPerLoop = () => 60 / settings.bpm * beatsPerLoop() * 1000;
+const millisPerBeat = () => millisPerLoop() / beatsPerLoop();
 
 let currentBeat = 1;
 let currentLoop = 1;
@@ -29,11 +29,14 @@ self.onmessage = (message) => {
 				clearInterval(currentTimer);
 				break;
 			}
-	};
+			currentBeat = 1;
+			currentLoop = 1;
+			break;
+	}
 };
 
 function start() {
-	currentTimer = setInterval(tick, milisPerBeat())
+	currentTimer = setInterval(tick, millisPerBeat())
 }
 
 function tick() {
