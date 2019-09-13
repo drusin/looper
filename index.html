@@ -10,12 +10,13 @@
 	<select id="devices"></select>
 </div>
 
+<audio></audio>
+
 <latency-tester-element id="latency-tester-element"></latency-tester-element>
 
 <audio id="current-output" autoplay controls muted></audio>
 <button id="start">Start</button>
 <div id="counter"></div>
-<div id="loops"></div>
 
 <loop-element id="loop-element"></loop-element>
 
@@ -25,16 +26,13 @@
 <script type="module">
 	const player = document.getElementById('current-output');
 	const startButton = document.getElementById('start');
-	const loopsContainer = document.getElementById('loops');
 	const devicesSelect = document.getElementById('devices');
 	devicesSelect.addEventListener('change', onDeviceSelection);
 
 	let stream_;
 
-	let mediaRecorder;
-	const recordedChunks = [];
 	const options = {mimeType: 'audio/webm'};
-	const worker = new Worker('./worker.js');
+	const beatWorker = new Worker('./beat-worker.js');
 
 	const counter = document.getElementById('counter');
 
@@ -45,13 +43,12 @@
 
 	startButton.addEventListener('click', function() {
 		audioContext.resume();
-		worker.postMessage('start');
-		mediaRecorder.start();
+		beatWorker.postMessage('start');
 	});
 
 	const latTest = document.getElementById('latency-tester-element');
 
-	worker.onmessage = (message) => {
+	beatWorker.onmessage = (message) => {
 		counter.innerHTML = message.data.currentBeat;
 		const osc = audioContext.createOscillator();
 		osc.connect(volume);
@@ -65,44 +62,12 @@
 
 		osc.start();
 		osc.stop(audioContext.currentTime + 0.1);
-		if (message.data.currentBeat === 1) {
-			mediaRecorder.stop();
-			syncLoops();
-		}
+		document.getElementById('loop-element').onBeatWorkerMessage(message);
 	};
-
-	function loop() {
-		const blob = new Blob(recordedChunks);
-		const newAudio = document.createElement('audio');
-		loopsContainer.appendChild(newAudio);
-		newAudio.src = URL.createObjectURL(blob);
-		newAudio.setAttribute('autoplay', '');
-		newAudio.setAttribute('loop', '');
-		newAudio.setAttribute('controls', '');
-		newAudio.currentTime = latTest.latency / 1000;
-		recordedChunks.length = 0;
-		mediaRecorder.start();
-	}
-
-	function syncLoops() {
-		Array.from(loopsContainer.children).forEach(child => child.currentTime = latTest.latency / 1000);
-	}
 
 	const handleSuccess = function(stream) {
 		stream_ = stream;
 		player.srcObject = stream;
-		if (mediaRecorder) {
-			mediaRecorder.stop();
-		}
-		mediaRecorder = new MediaRecorder(stream, options);
-
-		mediaRecorder.addEventListener('dataavailable', function(e) {
-			if (e.data.size > 0) {
-				recordedChunks.push(e.data);
-				console.log(e.data);
-			}
-			loop();
-		});
 
 		setupLatencyTest(stream);
 	};
@@ -148,7 +113,7 @@
 		document.getElementById('loop-element').init({
 			mediaRecorder: new MediaRecorder(stream, options),
 			latency: latTest.latency,
-			beatWorker: worker
+			beatWorker: beatWorker
 		});
 	}
 </script>

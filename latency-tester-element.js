@@ -23,10 +23,10 @@ class LatencyTesterElement extends HTMLElement {
 		this._shadowRoot.appendChild(template.content.cloneNode(true));
 
 		this._startButton = this._shadowRoot.getElementById('start');
-		this._startButton.addEventListener('click', () => this._worker.postMessage('start'), this);
+		this._startButton.addEventListener('click', () => this._beatWorker.postMessage('start'), this);
 
 		this._stopButton = this._shadowRoot.getElementById('stop');
-		this._stopButton.addEventListener('click', () => this._worker.postMessage('stop'));
+		this._stopButton.addEventListener('click', () => this._beatWorker.postMessage('stop'));
 
 		this._textLabel = this._shadowRoot.getElementById('text');
 
@@ -47,15 +47,15 @@ class LatencyTesterElement extends HTMLElement {
 			this.setAttribute('latency', localStorage.latency ? localStorage.latency : 0);
 		}
 
-		this._worker = new Worker('./worker.js');
-		this._worker.postMessage({
+		this._beatWorker = new Worker('./beat-worker.js');
+		this._beatWorker.postMessage({
 			name: 'settings',
 			settings: {
 				loopLength: 1,
 				highBeats: [4]
 			}
 		});
-		this._worker.onmessage = (message) => {
+		this._beatWorker.onmessage = (message) => {
 			this._textLabel.innerHTML = `${4 - message.data.currentBeat}`;
 			if (message.data.high) {
 				this._textLabel.innerHTML = 'GO!';
