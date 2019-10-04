@@ -3,6 +3,8 @@ import { generateGetters } from './utils.js';
 class GlobalSettings {
     constructor() {
         this._stream = undefined;
+        this._bpm = 120;
+        this._beatsPerMeasure = 4;
 
         return generateGetters(this);
     }

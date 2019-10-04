@@ -1,9 +1,10 @@
+import globalSettings from './global-settings.js';
+
 const template = document.createElement('template');
 /*html*/
 template.innerHTML = `
     <div>
         <button id="record">Record</button>
-        <button id="stop-recording">Stop Recording</button>
 		<audio id="first-output"></audio>
 		<audio id="second-output"></audio>
     </div>
@@ -16,10 +17,7 @@ class LoopElement extends HTMLElement {
 		this._shadowRoot.appendChild(template.content.cloneNode(true));
 
 		this._recordButton = this._shadowRoot.getElementById('record');
-		this._recordButton.addEventListener('click', () => this._record());
-
-		this._stopRecordingButton = this._shadowRoot.getElementById('stop-recording');
-		this._stopRecordingButton.addEventListener('click', () => this._stopRecording());
+		this._recordButton.addEventListener('click', () => this._recording ? this._stopRecording() : this._record());
 
 		this._firstOutput = this._shadowRoot.getElementById('first-output');
 		this._secondOutput = this._shadowRoot.getElementById('second-output');
@@ -42,19 +40,25 @@ class LoopElement extends HTMLElement {
 	}
 	
 	_record() {
+		this._recordButton.innerHTML = 'Stop Recording';
 		this._mediaRecorder.start();
 		this._startBeat = this._currentBeat;
-		this._startOffset = Date.now() - this._currentBeatTimeStamp;
-		this._startOffset -= this._latency;
+		this._startOffset = Date.now() - this._currentBeatTimeStamp - this._latency;
 		this._recording = true;
-		// if (this._startOffset < 0) {
-		// 	this._startBeat
-		// }
+		if (this._startOffset < 0) {
+			this._startBeat--;
+			if (this._startBeat < 1) {
+				this._startBeat = globalSettings.beatsPerMeasure;
+			}
+			this._startOffset += this._millisPerBeat;
+		}
 	}
 	
 	_stopRecording() {
+		this._recordButton.innerHTML = 'Start Recording';
 		this._mediaRecorder.stop();
 		this._recorded = true;
+		this._recording = false;
 	}
 	
 	set mediaRecorder(mediaRecorder) {
@@ -74,7 +78,7 @@ class LoopElement extends HTMLElement {
 		if (this._recording && this._currentBeat === this._startBeat) {
 			this._loopLength ++;
 		}
-		if (this._recorded && this._currentBeat === this._startBeat) {
+		if (!this._recording && this._recorded && this._currentBeat === this._startBeat) {
 			setTimeout(() => this._play(), this._startOffset);
 		}
 	}

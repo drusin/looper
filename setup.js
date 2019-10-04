@@ -44,8 +44,6 @@ const startButton = document.getElementById('start');
 const devicesSelect = document.getElementById('devices');
 devicesSelect.addEventListener('change', onInputDeviceSelection);
 
-let stream_;
-
 const options = {mimeType: 'audio/webm'};
 const beatWorker = new Worker('./beat-worker.js');
 
@@ -78,13 +76,6 @@ beatWorker.onmessage = (message) => {
     osc.start();
     osc.stop(audioContext.currentTime + 0.1);
     document.getElementById('loop-element').onBeatWorkerMessage(message);
-};
-
-const handleSuccess = function(stream) {
-    stream_ = stream;
-    player.srcObject = stream;
-
-    setupLatencyTest(stream);
 };
 
 import osc from './osc.js';

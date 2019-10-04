@@ -3,9 +3,8 @@ let settings = {
 	beatsPerMeasure: 4,
 	highBeats: [1],
 	repeat: true,
+	get millisPerBeat() { return 60 / settings.bpm * 1000; }
 };
-
-function millisPerBeat() { return 60 / settings.bpm * 1000; }
 
 let currentBeat = 1;
 
@@ -34,7 +33,7 @@ self.onmessage = (message) => {
 };
 
 function start() {
-	currentTimer = setInterval(tick, millisPerBeat())
+	currentTimer = setInterval(tick, settings.millisPerBeat)
 }
 
 function tick() {

@@ -23,15 +23,15 @@ class LatencyTesterElement extends HTMLElement {
 		this._shadowRoot.appendChild(template.content.cloneNode(true));
 
 		this._startButton = this._shadowRoot.getElementById('start');
-		this._startButton.addEventListener('click', () => this._beatWorker.postMessage('start'), this);
+		this._startButton.addEventListener('click', () => this._beatWorker.postMessage('start'));
 
 		this._stopButton = this._shadowRoot.getElementById('stop');
-		this._stopButton.addEventListener('click', () => this._beatWorker.postMessage('stop'));
+		this._stopButton.addEventListener('click', this._stop.bind(this));
 
 		this._textLabel = this._shadowRoot.getElementById('text');
 
 		this._latencyInput = this._shadowRoot.getElementById('latency');
-		this._latencyInput.addEventListener('change', e => this.latency = e.target.value, this);
+		this._latencyInput.addEventListener('change', e => this.latency = e.target.value);
 
 		this._output = this._shadowRoot.getElementById('output');
 
@@ -51,7 +51,6 @@ class LatencyTesterElement extends HTMLElement {
 		this._beatWorker.postMessage({
 			name: 'settings',
 			settings: {
-				loopLength: 1,
 				highBeats: [4]
 			}
 		});
@@ -77,6 +76,12 @@ class LatencyTesterElement extends HTMLElement {
 				}
 			}
 		};
+	}
+
+	_stop() {
+		this._beatWorker.postMessage('stop');
+		this._output.pause();
+		this._textLabel.innerHTML = '';
 	}
 	
 	get latency() {
