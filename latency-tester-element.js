@@ -31,7 +31,7 @@ class LatencyTesterElement extends HTMLElement {
 		this._textLabel = this._shadowRoot.getElementById('text');
 
 		this._latencyInput = this._shadowRoot.getElementById('latency');
-		this._latencyInput.addEventListener('change', (e) => this.latency = e.target.value, this);
+		this._latencyInput.addEventListener('change', e => this.latency = e.target.value, this);
 
 		this._output = this._shadowRoot.getElementById('output');
 
@@ -112,7 +112,6 @@ class LatencyTesterElement extends HTMLElement {
 	
 	attributeChangedCallback(name, oldValue, newValue) {
 		const update = this._attributeChanges[name] ? this._attributeChanges[name] : () => {};
-		
 		update(newValue, oldValue);
 	}
 }

@@ -5,7 +5,6 @@ let settings = {
 	repeat: true,
 };
 
-settings.millisPerBeat = millisPerBeat();
 function millisPerBeat() { return 60 / settings.bpm * 1000; }
 
 let currentBeat = 1;
@@ -16,7 +15,7 @@ self.onmessage = (message) => {
 	console.log(message);
 	switch (message.data.name || message.data) {
 		case "settings":
-			Object.assign(settings, message.data.settings, { millisPerBeat: millisPerBeat() });
+			Object.assign(settings, message.data.settings);
 			if (currentTimer) {
 				clearInterval(currentTimer);
 				start();
@@ -28,7 +27,6 @@ self.onmessage = (message) => {
 		case "stop":
 			if (currentTimer) {
 				clearInterval(currentTimer);
-				break;
 			}
 			currentBeat = 1;
 			break;
