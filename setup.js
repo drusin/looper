@@ -1,4 +1,5 @@
 import globalSettings from './global-settings.js';
+import osc from './osc.js';
 
 async function setupInputDevice() {
     const devices = await navigator.mediaDevices.enumerateDevices();
@@ -50,6 +51,7 @@ const beatWorker = new Worker('./beat-worker.js');
 const counter = document.getElementById('counter');
 
 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+osc.init(audioContext);
 const volume = audioContext.createGain();
 volume.gain.value = 0.1;
 volume.connect(audioContext.destination);
@@ -63,24 +65,18 @@ const latTest = document.getElementById('latency-tester-element');
 
 beatWorker.onmessage = (message) => {
     counter.innerHTML = message.data.currentBeat;
-    const osc = audioContext.createOscillator();
-    osc.connect(volume);
 
     if (message.data.high) {
-        osc.frequency.value = 440.0
+        osc.high();
     }
     else {
-        osc.frequency.value = 220.0;
+        osc.low();
     }
 
-    osc.start();
-    osc.stop(audioContext.currentTime + 0.1);
     document.getElementById('loop-element').onBeatWorkerMessage(message);
 };
 
-import osc from './osc.js';
 function setupLatencyTest(stream) {
-    osc.init(audioContext);
     latTest.osc = osc;
     latTest.mediaRecorder = new MediaRecorder(stream, options);
 
