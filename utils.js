@@ -12,6 +12,6 @@ export function generateGetters(instance) {
             }
             return target[`_${key}`];
         }
-    }
+    };
     return new Proxy(instance, handler);
 }

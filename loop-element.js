@@ -4,7 +4,7 @@ const template = document.createElement('template');
 /*html*/
 template.innerHTML = `
     <div>
-        <button id="record">Record</button>
+        <button id="record">Start Recording</button>
 		<audio id="first-output"></audio>
 		<audio id="second-output"></audio>
     </div>
@@ -39,6 +39,15 @@ class LoopElement extends HTMLElement {
 		this._currentLoopPosition = 0;
 	}
 	
+	_dataAvailable(e) {
+		const blob = new Blob([e.data]);
+		let src = URL.createObjectURL(blob);
+		this._firstOutput.src = src;
+		this._firstOutput.currentTime = 0.001;	//workaround to make sure the loop is loaded ASAP
+		this._secondOutput.src = src;
+		this._secondOutput.currentTime = 0.001;	//workaround to make sure the loop is loaded ASAP
+	}
+	
 	_record() {
 		this._recordButton.innerHTML = 'Stop Recording';
 		this._mediaRecorder.start();
@@ -67,7 +76,9 @@ class LoopElement extends HTMLElement {
 			const blob = new Blob([e.data]);
 			let src = URL.createObjectURL(blob);
 			this._firstOutput.src = src;
+			this._firstOutput.currentTime = 0.001;	//workaround to make sure the loop is loaded ASAP
 			this._secondOutput.src = src;
+			this._secondOutput.currentTime = 0.001;	//workaround to make sure the loop is loaded ASAP
 		});
 	}
 	
@@ -78,7 +89,8 @@ class LoopElement extends HTMLElement {
 		if (this._recording && this._currentBeat === this._startBeat) {
 			this._loopLength ++;
 		}
-		if (!this._recording && this._recorded && this._currentBeat === this._startBeat) {
+		if (this._recorded && this._currentBeat === this._startBeat) {
+			console.log(new Date() - this._currentBeatTimeStamp);
 			setTimeout(() => this._play(), this._startOffset);
 		}
 	}
@@ -88,7 +100,7 @@ class LoopElement extends HTMLElement {
 			this._firstOutput.play();
 		}
 		else {
-		
+			this._secondOutput.play();
 		}
 	}
 	

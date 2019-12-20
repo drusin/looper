@@ -20,6 +20,5 @@ class GlobalSettings {
 }
 
 const SINGLETON = new GlobalSettings();
-console.log(Object.getOwnPropertyDescriptors(Object.getPrototypeOf(SINGLETON), ));
 
 export default SINGLETON;
